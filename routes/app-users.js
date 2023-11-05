@@ -70,27 +70,37 @@ authRouter.post('/login', async function (req, res) {
 });
 
 
+
 authRouter.post('/password', async function (req, res) {
     try {
-       // const resetKey = crypto.randomBytes(32).toString('hex');
+        // Generate a reset key
+        const resetKey = crypto.randomBytes(32).toString('hex');
+        
         const payload = req.body;
         const appUser = await AppUserModel.findOne({ email: payload.email }, { name: 1, email: 1, _id: 0 });
-       // const cloudUser = await AppUserModel.updateOne({ email: payload.email }, { '$set': { ResetKey: resetKey } });
+        
         if (appUser) {
-            const responceObj = appUser.toObject();
-            const link = `${process.env.FRONTEND_URL}/reset`
-            console.log(link)
+            // Update the AppUserModel with the reset key
+            await AppUserModel.updateOne({ email: payload.email }, { $set: { ResetKey: resetKey } });
+            
+            const responseObj = appUser.toObject();
+            const link = `${process.env.FRONTEND_URL}/reset?key=${resetKey}`;
+            console.log(link);
+            
+            // You need to set up the 'transporter' and 'mailOptions' appropriately for sending emails.
+            // Make sure you have a transporter instance and mailOptions defined with valid values.
             await transporter.sendMail({ ...mailOptions, to: payload.email, text: link });
-            res.send({ responceObj, msg: 'user updated ' });
+            res.send({ responseObj, msg: 'User updated' });
+        } else {
+            res.status(404).send({ msg: 'User not found' });
         }
-        else {
-            res.status(404).send({ msg: 'user not found' });
-        }
-    }
-    catch (err) {
+    } catch (err) {
         console.log(err);
+        // Handle the error appropriately, e.g., sending an error response.
+        res.status(500).send({ msg: 'Internal server error' });
     }
 });
+
 
 authRouter.put('/validate', async function (req, res) {
     const payload = req.body;
