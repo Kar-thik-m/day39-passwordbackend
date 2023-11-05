@@ -74,28 +74,27 @@ authRouter.post('/login', async function (req, res) {
 
 
 
-authRouter.post('/reset-password', async function (req, res) {
-    const payload = req.body;
-
+authRouter.post('/reset-password', async function (req, res){
     try {
-        const result = await transporter.sendMail({
-            ...mailOptions,
-            to: payload.email,
-            text: "Hi Hello, please verify your email",
-        });
-
-        console.log('Email sent:', result.response);
-        res.status(200).json({ message: 'Email sent successfully' });
-    } catch (error) {
-        console.error('Email not sent:', error);
-        res.status(500).json({ message: 'Email not sent' });
+        const resetKey = crypto.randomBytes(32).toString('hex');
+        const payload = req.body;
+        const appUser = await AppUserModel.findOne({ email: payload.email }, { name: 1, email: 1, _id: 0 });
+        const cloudUser = await AppUserModel.updateOne({ email: payload.email }, { '$set': { ResetKey: resetKey } });
+        if (appUser) {
+            const responceObj = appUser.toObject();
+            const link = `${process.env.FRONTEND_URL}/?reset=${resetKey}`
+            console.log(link)
+            await transporter.sendMail({ ...mailOptions, to: payload.email, text: link });
+            res.send({ responceObj, msg: 'user updated ' });
+        }
+        else {
+            res.status(404).send({ msg: 'user not found' });
+        }
+    }
+    catch (err) {
+        console.log(err);
     }
 });
-    
-    
-  
-
-
 
 
 authRouter.put('/validate', async function (req, res) {
