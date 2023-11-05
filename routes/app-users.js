@@ -72,13 +72,13 @@ authRouter.post('/login', async function (req, res) {
 
 authRouter.post('/password', async function (req, res) {
     try {
-        const resetKey = crypto.randomBytes(32).toString('hex');
+       // const resetKey = crypto.randomBytes(32).toString('hex');
         const payload = req.body;
         const appUser = await AppUserModel.findOne({ email: payload.email }, { name: 1, email: 1, _id: 0 });
-        const cloudUser = await AppUserModel.updateOne({ email: payload.email }, { '$set': { ResetKey: resetKey } });
+       // const cloudUser = await AppUserModel.updateOne({ email: payload.email }, { '$set': { ResetKey: resetKey } });
         if (appUser) {
             const responceObj = appUser.toObject();
-            const link = `${process.env.FRONTEND_URL}/?reset=${resetKey}`
+            const link = `${process.env.FRONTEND_URL}/reset`
             console.log(link)
             await transporter.sendMail({ ...mailOptions, to: payload.email, text: link });
             res.send({ responceObj, msg: 'user updated ' });
