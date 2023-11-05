@@ -2,11 +2,11 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv'
 dotenv .config();
 export const transporter = nodemailer.createTransport({
-    service:'gmail',
-    auth:{
-        user:process.env.MAIL_NAME,
-        pass:process.env.MAIL_PASS,
-    }
+    service: 'Gmail',
+    auth: {
+        user: process.env.MAIL_NAME,
+        pass: process.env.MAIL_PASS, // Use the App Password you generated
+    },
 })
 
 export const mailOptions={
@@ -15,3 +15,5 @@ export const mailOptions={
     subject:'hi',
     text:'well come'
 }
+
+

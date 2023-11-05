@@ -2,7 +2,7 @@ import express from 'express';
 import { AppUserModel } from '../db-utils/module.js';
 import { v4 } from 'uuid';
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
+
 import { mailOptions, transporter } from './mail.js';
 const authRouter = express.Router();
 
@@ -71,35 +71,31 @@ authRouter.post('/login', async function (req, res) {
 
 
 
-authRouter.post('/password', async function (req, res) {
+
+
+
+authRouter.post('/reset-password', async function (req, res) {
+    const payload = req.body;
+
     try {
-        // Generate a reset key
-        const resetKey = crypto.randomBytes(32).toString('hex');
-        
-        const payload = req.body;
-        const appUser = await AppUserModel.findOne({ email: payload.email }, { name: 1, email: 1, _id: 0 });
-        
-        if (appUser) {
-            // Update the AppUserModel with the reset key
-            await AppUserModel.updateOne({ email: payload.email }, { $set: { ResetKey: resetKey } });
-            
-            const responseObj = appUser.toObject();
-            const link = `${process.env.FRONTEND_URL}/reset?key=${resetKey}`;
-            console.log(link);
-            
-            // You need to set up the 'transporter' and 'mailOptions' appropriately for sending emails.
-            // Make sure you have a transporter instance and mailOptions defined with valid values.
-            await transporter.sendMail({ ...mailOptions, to: payload.email, text: link });
-            res.send({ responseObj, msg: 'User updated' });
-        } else {
-            res.status(404).send({ msg: 'User not found' });
-        }
-    } catch (err) {
-        console.log(err);
-        // Handle the error appropriately, e.g., sending an error response.
-        res.status(500).send({ msg: 'Internal server error' });
+        const result = await transporter.sendMail({
+            ...mailOptions,
+            to: payload.email,
+            text: "Hi Hello, please verify your email",
+        });
+
+        console.log('Email sent:', result.response);
+        res.status(200).json({ message: 'Email sent successfully' });
+    } catch (error) {
+        console.error('Email not sent:', error);
+        res.status(500).json({ message: 'Email not sent' });
     }
 });
+    
+    
+  
+
+
 
 
 authRouter.put('/validate', async function (req, res) {
