@@ -71,33 +71,28 @@ authRouter.post('/login', async function (req, res) {
 
 
 
-authRouter.post('/reset-password', async function (req, res) {
+authRouter.post('/password', async function (req, res) {
     try {
-        const resetKey = crypto.randomBytes(32).toString('hex');
+      
         const payload = req.body;
+        const resetKey = crypto.randomBytes(32).toString('hex');
         const appUser = await AppUserModel.findOne({ email: payload.email }, { name: 1, email: 1, _id: 0 });
-
+        const cloudUser = await AppUserModel.updateOne({ email: payload.email }, { '$set': { ResetKey: resetKey } });
         if (appUser) {
-            // Update the user's reset key in the database.
-            await AppUserModel.updateOne({ email: payload.email }, { ResetKey: resetKey });
-
-            const responseObj = appUser.toObject();
-            const link = `${process.env.FRONTEND_URL}/?reset=${resetKey}`;
-            console.log(link);
-
-            
+            const responceObj = appUser.toObject();
+            const link = `${process.env.FRONTEND_URL}/?reset=${resetKey}`
+            console.log(link)
             await transporter.sendMail({ ...mailOptions, to: payload.email, text: link });
-
-            res.status(200).json({ responseObj, msg: 'Reset link sent successfully.' });
-        } else {
-            res.status(404).json({ msg: 'User not found' });
+            res.send({ responceObj, msg: 'user updated ' });
         }
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ msg: 'Internal server error' });
+        else {
+            res.status(404).send({ msg: 'user not found' });
+        }
+    }
+    catch (err) {
+        console.log(err);
     }
 });
-
 
 
 
