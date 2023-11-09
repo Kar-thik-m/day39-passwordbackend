@@ -3,8 +3,16 @@ import { AppUserModel } from '../db-utils/module.js';
 import { v4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import crypto from "crypto";
-import { mailOptions, transporter } from './mail.js';
+import nodemailer from "nodemailer"
 const authRouter = express.Router();
+
+const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user:  'sparrowkarthik007@gmail.com',
+      pass: 'gess xxge ihrh vrys',
+    },
+  });
 
 authRouter.post('/register', async (req, res) => {
 
@@ -32,16 +40,6 @@ authRouter.post('/register', async (req, res) => {
 });
 
 
-authRouter.get('/:email', async function (req, res) {
-    try {
-        const email = req.params.email;
-        const appUser = await AppUserModel.findOne({ email }, { id: 1, name: 1, email: 1, _id: 0 });
-        res.send(appUser);
-    } catch (err) {
-        console.log(err);
-        res.status(500).send({ msg: 'Error occuerred while fetching users' });
-    }
-});
 
 
 authRouter.post('/login', async function (req, res) {
@@ -73,26 +71,46 @@ authRouter.post('/login', async function (req, res) {
 
 authRouter.post('/password', async function (req, res) {
     try {
-      
-        const payload = req.body;
-        const resetKey = crypto.randomBytes(32).toString('hex');
-        const appUser = await AppUserModel.findOne({ email: payload.email }, { name: 1, email: 1, _id: 0 });
-        const cloudUser = await AppUserModel.updateOne({ email: payload.email }, { '$set': { ResetKey: resetKey } });
-        if (appUser) {
-            const responceObj = appUser.toObject();
-            const link = `${process.env.FRONTEND_URL}/?reset=${resetKey}`
-            console.log(link)
-            await transporter.sendMail({ ...mailOptions, to: payload.email, text: link });
-            res.send({ responceObj, msg: 'user updated ' });
-        }
-        else {
-            res.status(404).send({ msg: 'user not found' });
-        }
+     const token = crypto.randomBytes(20).toString('hex');
+     const email = req.body.email;
+   
+     // Create a password reset link with the token and send it via email
+    
+     const appUser = await AppUserModel.findOne({ email: email }, { name: 1, email: 1, _id: 0 });
+     if(appUser){
+       const  resetkey = `${process.env.FRONTEND_URL}/reset/${token}`;
+        await AppUserModel.updateOne({ email: email }, { '$set': { ResetKey: resetkey } });
+     
+     
+     const mailOptions = {
+       from: 'your_email@gmail.com',
+       to: email,
+       subject: 'Password Reset Request',
+       text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
+              Please click on the following link to complete the process:\n\n${ resetkey}\n\n
+              If you did not request this, please ignore this email and your password will remain unchanged.\n`,
+     };
+   
+     transporter.sendMail(mailOptions, (error) => {
+       if (error) {
+         console.log(error);
+         res.status(500).send('Failed to send the password reset email.');
+       } else {
+         res.render('reset-success');
+       }
+     });
+   }else{
+     res.status(404).send({ msg: 'user not found' });
+   }
+    } catch (err) {
+     console.log(err);
+     res.status(500).send({ msg: 'Error in updating' })
     }
-    catch (err) {
-        console.log(err);
-    }
-});
+   
+   });
+           
+     
+
 
 
 
