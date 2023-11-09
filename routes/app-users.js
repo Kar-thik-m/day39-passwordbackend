@@ -69,7 +69,7 @@ authRouter.post('/login', async function (req, res) {
 
 
 
-authRouter.post('/password', async function (req, res) {
+authRouter.post('/reset-password', async function (req, res) {
     try {
      const token = crypto.randomBytes(20).toString('hex');
      const email = req.body.email;
